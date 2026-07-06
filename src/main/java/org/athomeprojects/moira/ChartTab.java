@@ -63,6 +63,7 @@ import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageDataProvider;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -1397,10 +1398,10 @@ class ChartTab {
                 entry.setDrawSize(data.getDrawSize(), 1.0, 0);
             }
             g2d.dispose();
-            BufferedImage swt_image = (render_scale <= 1) ? g2d_image
+            BufferedImage swt_image = (render_scale <= 1) ? null
                     : scaleDiagramImage(g2d_image, size);
-            entry.setImage(copyImage(swt_image, size));
-            if (swt_image != g2d_image)
+            entry.setImage(copyImage(swt_image, g2d_image));
+            if (swt_image != null)
                 swt_image.flush();
             g2d_image.flush();
             reset_draw = DrawSWT.isMarkerEnabled();
@@ -1494,13 +1495,22 @@ class ChartTab {
         return scaled;
     }
 
-    private Image copyImage(BufferedImage image, Point size)
+    private Image copyImage(BufferedImage standard_image, BufferedImage high_image)
     {
-        return new Image(Display.getCurrent(), copyImageData(image, size));
+        ImageData standard_data = copyImageData(
+                standard_image != null ? standard_image : high_image);
+        ImageData high_data = copyImageData(high_image);
+        return new Image(Display.getCurrent(), new ImageDataProvider() {
+            public ImageData getImageData(int zoom)
+            {
+                return zoom >= 150 ? high_data : standard_data;
+            }
+        });
     }
 
-    private ImageData copyImageData(BufferedImage image, Point size)
+    private ImageData copyImageData(BufferedImage image)
     {
+        Point size = new Point(image.getWidth(), image.getHeight());
         ImageData image_data = new ImageData(size.x, size.y, 24, PALETTE_DATA);
         byte[] swt_data = image_data.data;
         int[] g2d_data = new int[size.x * size.y];
