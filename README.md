@@ -16,8 +16,8 @@ macOS-specific build/run support.
 
 ## Supported Macs
 
-- Intel Macs: verified with Java 8 x86_64 and `swt-cocoa-macosx-x86_64-3.111.0.jar`
-- Apple Silicon Macs: includes `swt-cocoa-macosx-aarch64-3.122.0.jar` for arm64 Java runtimes
+- Intel Macs: verified with Java 17 x86_64 and `swt-cocoa-macosx-x86_64-3.126.0.jar`
+- Apple Silicon Macs: includes `swt-cocoa-macosx-aarch64-3.126.0.jar` for arm64 Java 17 runtimes
 
 The scripts select the SWT jar from the architecture of the Java runtime, not
 the hardware. Use an arm64 JDK on Apple Silicon for the arm64 SWT jar.
@@ -32,20 +32,22 @@ the hardware. Use an arm64 JDK on Apple Silicon for the arm64 SWT jar.
 The launcher must use `-XstartOnFirstThread` for SWT on macOS. The scripts
 select the bundled SWT jar from the architecture of the Java runtime:
 
-- `x86_64`: `lib/swt-cocoa-macosx-x86_64-3.111.0.jar`
-- `aarch64` / `arm64`: `lib/swt-cocoa-macosx-aarch64-3.122.0.jar`
+- `x86_64`: `lib/swt-cocoa-macosx-x86_64-3.126.0.jar`
+- `aarch64` / `arm64`: `lib/swt-cocoa-macosx-aarch64-3.126.0.jar`
 
 You can override the runtime and SWT jar if needed:
 
 ```bash
-JAVA_CMD=/path/to/java JAVAC_CMD=/path/to/javac ./scripts/build.sh
-MOIRA_SWT_JAR=lib/swt-cocoa-macosx-x86_64-3.111.0.jar ./scripts/run.sh
+MOIRA_JAVA_HOME=/path/to/jdk-17 ./scripts/build.sh
+MOIRA_SWT_JAR=lib/swt-cocoa-macosx-x86_64-3.126.0.jar ./scripts/run.sh
 ```
 
 ## Changes from the original source
 
 - Added macOS build and run scripts.
 - Bundled macOS SWT jars for Intel and Apple Silicon runtimes.
+- Moved the default runtime target to Java 17 and SWT 3.126.0 to avoid macOS
+  Sonoma blank-window rendering with older SWT/JDK combinations.
 - Added macOS font fallback registration to avoid Java logical `Serif` warnings
   for missing `Times` and `Lucida Bright`.
 - Fixed macOS SWT marker/rubber-band drawing paths that could crash when angle

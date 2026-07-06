@@ -1,8 +1,10 @@
 build/
 dist/
+release/
+runtime/
+tmp-swt-test/
 *.class
 *.log
 hs_err_pid*.log
 .DS_Store
 ._*
-

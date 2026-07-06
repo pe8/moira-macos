@@ -73,6 +73,8 @@ class DataTab extends BaseTab {
 
     private int before_pos, after_pos, margin_width, folder_index;
 
+    private boolean attribute_initialized;
+
     private boolean wrap, multi_pos, rubber_band, small, allow_find, detached;
 
     private Point drag_pt;
@@ -605,9 +607,10 @@ class DataTab extends BaseTab {
         boolean t_small = folder_index != TabManager.WINDOW_FOLDER
                 && composite.getClientArea().width < Resource
                         .getInt("large_tab_width");
-        if (check && small == t_small)
+        if (check && attribute_initialized && small == t_small)
             return;
         small = t_small;
+        attribute_initialized = true;
         setFont(small);
         margin_width = small ? SMALL_MARGIN : LARGE_MARGIN;
         FillLayout layout = (FillLayout) margin.getLayout();

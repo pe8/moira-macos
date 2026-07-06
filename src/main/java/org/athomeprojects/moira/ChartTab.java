@@ -18,6 +18,7 @@
 package org.athomeprojects.moira;
 
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 import org.athomeprojects.base.BaseCalendar;
@@ -40,6 +41,7 @@ import org.athomeprojects.swtext.HoverTipSWT;
 import org.athomeprojects.swtext.ImageManager;
 import org.athomeprojects.swtext.LocationSpinner;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
@@ -91,8 +93,6 @@ class ChartTab {
     static public final int NOTE_TAB = 3;
 
     static public final int NUM_TAB = 4;
-
-    private final int TRANSPARENT_COLOR = 0x123456;
 
     private final int HINT_DELAY = 10;
 
@@ -1051,6 +1051,7 @@ class ChartTab {
     private void showData(GC gc, ScrolledComposite desc_scroll, Canvas canvas,
             boolean use_birth)
     {
+        prepareSwtQuality(gc);
         boolean show_horiz = data.getShowHoriz();
         if (show_horiz || ChartMode.isChartMode(ChartMode.ASTRO_MODE)) {
             if (!use_birth)
@@ -1350,9 +1351,13 @@ class ChartTab {
                 old_image.dispose();
                 entry.setImage(null);
             }
-            BufferedImage g2d_image = new BufferedImage(size.x, size.y,
-                    BufferedImage.TYPE_INT_ARGB);
+            int render_scale = getDiagramRenderScale(size);
+            BufferedImage g2d_image = new BufferedImage(size.x * render_scale,
+                    size.y * render_scale, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2d = (Graphics2D) g2d_image.getGraphics();
+            setDiagramRenderingHints(g2d);
+            if (render_scale > 1)
+                g2d.scale(render_scale, render_scale);
             if (ui_mode) {
                 int edge_spacing = Resource.getInt("ui_diagram_edge_spacing");
                 int image_width = size.x - 2 * edge_spacing;
@@ -1392,13 +1397,19 @@ class ChartTab {
                 entry.setDrawSize(data.getDrawSize(), 1.0, 0);
             }
             g2d.dispose();
-            entry.setImage(copyImage(g2d_image, size));
+            BufferedImage swt_image = (render_scale <= 1) ? g2d_image
+                    : scaleDiagramImage(g2d_image, size);
+            entry.setImage(copyImage(swt_image, size));
+            if (swt_image != g2d_image)
+                swt_image.flush();
+            g2d_image.flush();
             reset_draw = DrawSWT.isMarkerEnabled();
         }
         DrawSWT.preparePaint();
         Image image = entry.getImage();
         if (image == null || image.isDisposed())
             return;
+        prepareSwtQuality(event.gc);
         event.gc.drawImage(image, event.x, event.y, event.width,
                 event.height, event.x, event.y, event.width, event.height);
         DrawSWT.paintMarker(event.gc);
@@ -1417,10 +1428,80 @@ class ChartTab {
         }
     }
 
+    private int getDiagramRenderScale(Point size)
+    {
+        int scale = 2;
+        String value = System.getProperty("moira.diagram.renderScale");
+        if (value != null) {
+            try {
+                scale = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                scale = 2;
+            }
+        }
+        if (scale < 1)
+            scale = 1;
+        if (scale > 2)
+            scale = 2;
+        long pixels = (long) size.x * size.y * scale * scale;
+        long max_pixels = 12000000L;
+        while (scale > 1 && pixels > max_pixels) {
+            scale--;
+            pixels = (long) size.x * size.y * scale * scale;
+        }
+        return scale;
+    }
+
+    private void prepareSwtQuality(GC gc)
+    {
+        try {
+            gc.setAntialias(SWT.ON);
+            gc.setTextAntialias(SWT.ON);
+            gc.setInterpolation(SWT.HIGH);
+        } catch (SWTException e) {
+            // Some SWT backends cannot change advanced GC quality settings.
+        }
+    }
+
+    private void setDiagramRenderingHints(Graphics2D g2d)
+    {
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_PURE);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+    }
+
+    private BufferedImage scaleDiagramImage(BufferedImage image, Point size)
+    {
+        BufferedImage scaled = new BufferedImage(size.x, size.y,
+                BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = (Graphics2D) scaled.getGraphics();
+        setDiagramRenderingHints(g2d);
+        g2d.drawImage(image, 0, 0, size.x, size.y, null);
+        g2d.dispose();
+        return scaled;
+    }
+
     private Image copyImage(BufferedImage image, Point size)
     {
+        return new Image(Display.getCurrent(), copyImageData(image, size));
+    }
+
+    private ImageData copyImageData(BufferedImage image, Point size)
+    {
         ImageData image_data = new ImageData(size.x, size.y, 24, PALETTE_DATA);
-        image_data.transparentPixel = TRANSPARENT_COLOR;
         byte[] swt_data = image_data.data;
         int[] g2d_data = new int[size.x * size.y];
         image.getRGB(0, 0, size.x, size.y, g2d_data, 0, size.x);
@@ -1433,7 +1514,7 @@ class ChartTab {
                 }
             }
         }
-        return new Image(Display.getCurrent(), image_data);
+        return image_data;
     }
 
     public void setBirthDate(int[] date)
