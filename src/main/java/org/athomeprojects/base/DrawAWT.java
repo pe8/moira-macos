@@ -337,6 +337,8 @@ public class DrawAWT {
 		// decrease font size lower limit for high resolution output
 		if (high_res)
 			font_size[0] /= 2;
+		if (font_scaler > 1 && max_height > 10)
+			max_height -= 5;
 		for (int i = 0; i < (single_row ? 1 : 2); i++) {
 			if (i == 0) { // single row check
 				n_col = n_entry;
