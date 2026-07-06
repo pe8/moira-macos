@@ -54,8 +54,6 @@ MOIRA_SWT_JAR=lib/swt-cocoa-macosx-x86_64-3.111.0.jar ./scripts/run.sh
   backgrounds caused by legacy image handling.
 - Adjusted the startup layout so the chart button and location/timezone controls
   are visible without resizing the window.
-- Removed the experimental synchronous Retina bitmap conversion path because it
-  blocked the SWT UI thread and made dropdowns feel slow.
 
 ## Build outputs
 
