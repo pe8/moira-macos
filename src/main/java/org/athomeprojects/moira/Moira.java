@@ -778,6 +778,8 @@ public class Moira {
 		} else {
 			install_path = file = null;
 		}
+		Display.setAppName("Moira");
+		Display.setAppVersion("1.0.0");
 		display = new Display();
 		shell = new Shell(display);
 		shell.setBackground(display.getSystemColor(SWT.COLOR_WHITE));

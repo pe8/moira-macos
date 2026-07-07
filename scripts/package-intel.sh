@@ -101,12 +101,12 @@ SWT_JAR="\$APP_DIR/lib/$SWT_JAR"
 LEGACY_JAR="\$APP_DIR/lib/$LEGACY_JAR"
 
 if [[ "\${1:-}" == "--print-command" ]]; then
-  printf '%q ' "\$JAVA_BIN" "-XstartOnFirstThread" "-Xmixed" "-cp" "\$APP_DIR/moira.jar:\$SWT_JAR:\$LEGACY_JAR" "org.athomeprojects.moira.Moira" "\$APP_DIR"
+  printf '%q ' "\$JAVA_BIN" "-XstartOnFirstThread" "-Xmixed" "-Xdock:name=Moira" "-cp" "\$APP_DIR/moira.jar:\$SWT_JAR:\$LEGACY_JAR" "org.athomeprojects.moira.Moira" "\$APP_DIR"
   printf '\n'
   exit 0
 fi
 
-exec "\$JAVA_BIN" -XstartOnFirstThread -Xmixed -cp "\$APP_DIR/moira.jar:\$SWT_JAR:\$LEGACY_JAR" org.athomeprojects.moira.Moira "\$APP_DIR" "\$@"
+exec "\$JAVA_BIN" -XstartOnFirstThread -Xmixed -Xdock:name=Moira -cp "\$APP_DIR/moira.jar:\$SWT_JAR:\$LEGACY_JAR" org.athomeprojects.moira.Moira "\$APP_DIR" "\$@"
 EOF
 chmod +x "$CONTENTS/MacOS/Moira"
 

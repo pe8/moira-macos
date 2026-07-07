@@ -54,6 +54,7 @@ fi
 exec "$JAVA_CMD" \
   -XstartOnFirstThread \
   -Xmixed \
+  -Xdock:name=Moira \
   -cp "$DIST_DIR/moira.jar:$SWT_JAR:$JFACE_JAR" \
   org.athomeprojects.moira.Moira \
   "$DIST_DIR"
